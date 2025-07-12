@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import API from '../services/api';
+import API from '../src/services/api';
 import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
@@ -12,23 +12,27 @@ const Login = () => {
     confirmPassword: ''
   });
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
   const [errors, setErrors] = useState({
     name: '',
     email: '',
     password: '',
     confirmPassword: ''
   });
+  const [serverError, setServerError] = useState(''); // <-- New state for server error message
+  const navigate = useNavigate();
 
   const toggleForm = () => {
     setIsLogin(!isLogin);
     setErrors({ name: '', email: '', password: '', confirmPassword: '' });
+    setFormData({ name: '', email: '', password: '', confirmPassword: '' });
+    setServerError(''); // Clear error when toggling
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
+    setServerError(''); // Clear server error on any input change
   };
 
   const validateForm = () => {
@@ -72,6 +76,7 @@ const Login = () => {
     if (!validateForm()) return;
 
     setLoading(true);
+    setServerError(''); // Clear previous server error
 
     try {
       let response;
@@ -90,14 +95,17 @@ const Login = () => {
 
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
-      navigate('/dashboard');
+      setLoading(false);
+      navigate('/taskspage'); // Navigate on success to /tasks
     } catch (error) {
       setLoading(false);
       const errorData = error.response?.data;
       if (errorData?.errors) {
         setErrors(errorData.errors);
+      } else if (errorData?.message) {
+        setServerError(errorData.message); // Show server error message here
       } else {
-        alert(errorData?.message || 'An error occurred. Please try again.');
+        setServerError('An error occurred. Please try again.');
       }
     }
   };
@@ -128,6 +136,12 @@ const Login = () => {
         {showForm && (
           <div className="bg-gradient-to-b from-white to-[#FFEDED] rounded-xl shadow-2xl w-full max-w-sm p-8 animate-fade-in">
             <h2 className="text-3xl font-bold text-gray-800 mb-6 text-center">{isLogin ? 'Login' : 'Sign Up'}</h2>
+            
+            {/* Server error message */}
+            {serverError && (
+              <p className="text-red-600 text-center mb-4 font-medium">{serverError}</p>
+            )}
+
             <form className="space-y-5" onSubmit={handleSubmit}>
               {!isLogin && (
                 <div>
@@ -138,7 +152,7 @@ const Login = () => {
                     placeholder="Username"
                     value={formData.name}
                     onChange={handleChange}
-                    className={`w-full border ${errors.name ? 'border-red-500' : 'border-gray-300'} rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#AC2898] focus:border-transparent`}
+                    className={`w-full border ${errors.name ? 'border-red-500' : 'border-gray-300'} rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#AC2898] focus:border-transparent text-black`}
                   />
                   {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
                 </div>
@@ -151,7 +165,7 @@ const Login = () => {
                   placeholder="your@email.com"
                   value={formData.email}
                   onChange={handleChange}
-                  className={`w-full border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#AC2898] focus:border-transparent`}
+                  className={`w-full border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#AC2898] focus:border-transparent text-black`}
                 />
                 {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
               </div>
@@ -161,9 +175,10 @@ const Login = () => {
                   type="password"
                   name="password"
                   placeholder="••••••••"
+                  autoComplete={isLogin ? 'current-password' : 'new-password'}
                   value={formData.password}
                   onChange={handleChange}
-                  className={`w-full border ${errors.password ? 'border-red-500' : 'border-gray-300'} rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#AC2898] focus:border-transparent`}
+                  className={`w-full border ${errors.password ? 'border-red-500' : 'border-gray-300'} rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#AC2898] focus:border-transparent text-black`}
                 />
                 {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
               </div>
@@ -174,9 +189,10 @@ const Login = () => {
                     type="password"
                     name="confirmPassword"
                     placeholder="••••••••"
+                    autoComplete="new-password"
                     value={formData.confirmPassword}
                     onChange={handleChange}
-                    className={`w-full border ${errors.confirmPassword ? 'border-red-500' : 'border-gray-300'} rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#AC2898] focus:border-transparent`}
+                    className={`w-full border ${errors.confirmPassword ? 'border-red-500' : 'border-gray-300'} rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#AC2898] focus:border-transparent text-black`}
                   />
                   {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword}</p>}
                 </div>
@@ -196,6 +212,7 @@ const Login = () => {
                   type="button"
                   onClick={toggleForm}
                   className="ml-1 text-[#AC2898] font-medium hover:text-[#421B41] focus:outline-none"
+                  aria-pressed={!isLogin}
                 >
                   {isLogin ? 'Sign up' : 'Login'}
                 </button>

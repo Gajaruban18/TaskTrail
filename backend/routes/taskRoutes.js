@@ -5,30 +5,16 @@ const {
   createTask,
   updateTask,
   deleteTask
-} = require('../controllers/authController')
+} = require('../controllers/taskController');
 const { protect } = require('../middlewares/authMiddleware');
 
-// All routes below are protected
+// Protect all /api/tasks routes
 router.use(protect);
 
-// @route   GET /api/tasks
-// @desc    Get all tasks for user (with filters)
-// @access  Private
-router.get('/', getTasks);
-
-// @route   POST /api/tasks
-// @desc    Create a new task
-// @access  Private
-router.post('/', createTask);
-
-// @route   PUT /api/tasks/:id
-// @desc    Update task
-// @access  Private
-router.put('/:id', updateTask);
-
-// @route   DELETE /api/tasks/:id
-// @desc    Delete task
-// @access  Private
-router.delete('/:id', deleteTask);
+// Routes
+router.get('/', getTasks);          // GET all tasks for logged in user
+router.post('/', createTask);       // POST a new task
+router.put('/:id', updateTask);     // PUT to update a task
+router.delete('/:id', deleteTask);  // DELETE a task
 
 module.exports = router;

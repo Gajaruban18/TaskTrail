@@ -1,11 +1,9 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const { jwtSecret } = require('../config/jwt');
 
-exports.protect = async (req, res, next) => {
+const protect = async (req, res, next) => {
   let token;
 
-  // Check for token in Authorization header
   if (
     req.headers.authorization &&
     req.headers.authorization.startsWith('Bearer')
@@ -18,10 +16,7 @@ exports.protect = async (req, res, next) => {
   }
 
   try {
-    // Verify token
-    const decoded = jwt.verify(token, jwtSecret);
-
-    // Attach user to request (without password)
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = await User.findById(decoded.id).select('-password');
 
     if (!req.user) {
@@ -31,11 +26,11 @@ exports.protect = async (req, res, next) => {
     next();
   } catch (err) {
     console.error('Auth middleware error:', err.message);
-
     if (err.name === 'TokenExpiredError') {
       return res.status(401).json({ message: 'Token expired. Please login again.' });
     }
-
     res.status(401).json({ message: 'Not authorized, invalid token' });
   }
 };
+
+module.exports = { protect };
