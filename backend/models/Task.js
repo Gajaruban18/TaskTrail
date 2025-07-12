@@ -23,11 +23,7 @@ const TaskSchema = new mongoose.Schema({
   completed: {
     type: Boolean,
     default: false
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
   }
-});
+}, { timestamps: true }); // auto adds createdAt and updatedAt
 
 module.exports = mongoose.model('Task', TaskSchema);

@@ -5,6 +5,7 @@ const { jwtSecret } = require('../config/jwt');
 exports.protect = async (req, res, next) => {
   let token;
 
+  // Check for token in Authorization header
   if (
     req.headers.authorization &&
     req.headers.authorization.startsWith('Bearer')
@@ -13,18 +14,28 @@ exports.protect = async (req, res, next) => {
   }
 
   if (!token) {
-    return res.status(401).json({ message: 'Not authorized, no token' });
+    return res.status(401).json({ message: 'Not authorized, no token provided' });
   }
 
   try {
     // Verify token
     const decoded = jwt.verify(token, jwtSecret);
 
-    // Get user from token
+    // Attach user to request (without password)
     req.user = await User.findById(decoded.id).select('-password');
+
+    if (!req.user) {
+      return res.status(401).json({ message: 'User no longer exists' });
+    }
+
     next();
   } catch (err) {
-    console.error(err.message);
-    res.status(401).json({ message: 'Not authorized, token failed' });
+    console.error('Auth middleware error:', err.message);
+
+    if (err.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'Token expired. Please login again.' });
+    }
+
+    res.status(401).json({ message: 'Not authorized, invalid token' });
   }
 };

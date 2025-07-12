@@ -4,6 +4,7 @@ const connectDB = require('./config/db');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const mongoose = require('mongoose');
 
 // Connect to database
 connectDB();
@@ -44,7 +45,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Handle 404
+// Handle 404 for unknown routes
 app.use((req, res) => {
   res.status(404).json({ 
     success: false,
@@ -54,6 +55,20 @@ app.use((req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+// Start server
+const server = app.listen(PORT, () => {
   console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
 });
+
+// Graceful shutdown
+process.on('SIGINT', async () => {
+  console.log('SIGINT received: closing MongoDB connection and shutting down server...');
+  await mongoose.connection.close();
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
+});
+
+// Note: Make sure your async route handlers use try/catch or asyncHandler
+// e.g. https://www.npmjs.com/package/express-async-handler
